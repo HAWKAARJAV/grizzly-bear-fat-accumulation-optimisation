@@ -1,0 +1,35 @@
+============================================================
+  GBFAO Optimisation Summary  –  CEC-2020
+============================================================
+
+  Algorithm evaluated : GBFAO-v4
+  Total functions     : 10
+
+  [OPTIMISED]  Functions where GBFAO-v4 ranked #1 (best fitness)
+     Count : 0 / 10
+     Functions : None
+
+  [TOP-3]  Functions where GBFAO-v4 ranked 1st, 2nd, or 3rd
+     Count : 3 / 10
+     Functions : G6, G9, G10
+
+============================================================
+  Per-Function Detail
+============================================================
+  Function             Mean Fitness    Rank  Status
+  ------------  --------------------  ------  ---------------
+  G1                    1.087684e+04       4  
+  G10                   1.048402e+03       3  [Top-3]
+  G2                    2.000066e+02       5  
+  G3                    3.035716e+02       5  
+  G4                    4.395836e+02       5  
+  G5                    5.254296e+02       4  
+  G6                    6.019983e+02       3  [Top-3]
+  G7                    7.250459e+02       4  
+  G8                    8.114688e+02       4  
+  G9                    9.022400e+02       2  [Top-3]
+
+============================================================
+  RESULT: GBFAO-v4 optimised 0 out of 10 functions
+          (ranked #1 / best mean fitness)
+============================================================

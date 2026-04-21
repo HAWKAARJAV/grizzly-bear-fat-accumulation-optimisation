@@ -1,0 +1,30 @@
+============================================================
+  GBFAO Optimisation Summary  –  CEC-2017
+============================================================
+
+  Algorithm evaluated : GBFAO-v4
+  Total functions     : 5
+
+  [OPTIMISED]  Functions where GBFAO-v4 ranked #1 (best fitness)
+     Count : 0 / 5
+     Functions : None
+
+  [TOP-3]  Functions where GBFAO-v4 ranked 1st, 2nd, or 3rd
+     Count : 1 / 5
+     Functions : F6
+
+============================================================
+  Per-Function Detail
+============================================================
+  Function             Mean Fitness    Rank  Status
+  ------------  --------------------  ------  ---------------
+  F1                    3.659787e+02       5  
+  F14                   2.493372e+03       6  
+  F6                    1.217210e+03       2  [Top-3]
+  F7                    1.481203e+03       4  
+  F9                    1.808152e+03       9  
+
+============================================================
+  RESULT: GBFAO-v4 optimised 0 out of 5 functions
+          (ranked #1 / best mean fitness)
+============================================================
