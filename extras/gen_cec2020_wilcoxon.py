@@ -1,3 +1,4 @@
+import sys, os; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 """
 Generate CEC-2020 Wilcoxon table from existing cec2020_results.csv
 Run: python3 gen_cec2020_wilcoxon.py
