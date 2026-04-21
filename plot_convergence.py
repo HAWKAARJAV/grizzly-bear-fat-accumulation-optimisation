@@ -1,16 +1,4 @@
-"""
-=============================================================
- Plotting Module – Convergence Curves & Result Heatmaps
- ─────────────────────────────────────────────────────────
- Functions
- ─────────
- plot_convergence()   – convergence curves for all algorithms
- plot_boxplots()      – box plots of 50-run fitness distributions
- plot_rank_heatmap()  – rank heatmap across functions
- plot_engineering()   – bar chart for engineering problems
- plot_version_comparison() – shows v1→v4 convergence speedup
-=============================================================
-"""
+# Plotting utilities: convergence curves, boxplots, rank heatmap, engineering bar chart, version comparison.
 
 import os
 import numpy as np
@@ -106,7 +94,7 @@ def plot_convergence(curves_dict: dict,
                fontsize=7, frameon=False)
 
     plt.tight_layout(rect=[0, 0.05, 1, 1])
-    out = os.path.join(save_dir, "convergence_all.pdf")
+    out = os.path.join(save_dir, "5_Convergence_Curves.pdf")
     plt.savefig(out, bbox_inches="tight")
     plt.close()
     print(f"[✓] Convergence curves  → {out}")
@@ -155,7 +143,7 @@ def plot_boxplots(results_dict: dict,
         axes[fi].set_visible(False)
 
     plt.tight_layout()
-    out = os.path.join(save_dir, "boxplots_all.pdf")
+    out = os.path.join(save_dir, "6_Boxplots.pdf")
     plt.savefig(out, bbox_inches="tight")
     plt.close()
     print(f"[✓] Box plots           → {out}")

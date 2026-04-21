@@ -1,9 +1,4 @@
-"""
-=============================================================
- Benchmark Functions – CEC-2014 / CEC-2017 Style (30 funcs)
- Shifted & composite landscape functions for optimisation
-=============================================================
-"""
+# 30 benchmark functions (CEC-2014 style): shifted unimodal, multimodal, and hybrid landscapes.
 import numpy as np
 
 # ─── Fixed shift vectors (one per function, seeded for reproducibility) ───────

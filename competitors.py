@@ -1,35 +1,18 @@
-"""
-=============================================================
- Competitor Algorithms (7 recent nature-inspired algorithms)
- 1. PSO   – Particle Swarm Optimization
- 2. GWO   – Grey Wolf Optimizer
- 3. WOA   – Whale Optimization Algorithm
- 4. DE    – Differential Evolution
- 5. SMA   – Slime Mould Algorithm
- 6. HHO   – Harris Hawks Optimization
- 7. AO    – Aquila Optimizer
-=============================================================
-Each function signature:
-    best_fitness, best_pos, curve = algorithm(func, lb, ub, dim, max_fes)
-    max_fes : maximum function evaluations (budget)
-"""
+# Competitor algorithms used as baselines in the benchmark experiments.
+# All follow the same interface: best_fit, best_pos, curve = algo(func, lb, ub, dim, max_fes)
 
 import numpy as np
 import math
 
-# ─────────────────────────────────────────────────────────────
-# Helper
-# ─────────────────────────────────────────────────────────────
 def _clip(x, lb, ub):
     return np.clip(x, lb, ub)
 
 def _init_pop(n, dim, lb, ub):
     return np.random.uniform(lb, ub, (n, dim))
 
-# ══════════════════════════════════════════════════════════════
-# 1. PSO – Particle Swarm Optimization
-# ══════════════════════════════════════════════════════════════
+
 def PSO(func, lb, ub, dim, max_fes, pop=30, w=0.7, c1=2.0, c2=2.0):
+    """Particle Swarm Optimization."""
     pos = _init_pop(pop, dim, lb, ub)
     vel = np.zeros((pop, dim))
     pbest_pos = pos.copy()
@@ -59,14 +42,12 @@ def PSO(func, lb, ub, dim, max_fes, pop=30, w=0.7, c1=2.0, c2=2.0):
     return gbest_fit, gbest_pos, curve
 
 
-# ══════════════════════════════════════════════════════════════
-# 2. GWO – Grey Wolf Optimizer
-# ══════════════════════════════════════════════════════════════
 def GWO(func, lb, ub, dim, max_fes, pop=30):
-    pos = _init_pop(pop, dim, lb, ub)
+    """Grey Wolf Optimizer."""
+    pos  = _init_pop(pop, dim, lb, ub)
     fits = np.array([func(pos[i]) for i in range(pop)])
-    fes = pop
-    idx = np.argsort(fits)
+    fes  = pop
+    idx  = np.argsort(fits)
     alpha_pos, beta_pos, delta_pos = pos[idx[0]].copy(), pos[idx[1]].copy(), pos[idx[2]].copy()
     alpha_fit = fits[idx[0]]
     curve = [alpha_fit]
@@ -88,13 +69,11 @@ def GWO(func, lb, ub, dim, max_fes, pop=30):
     return alpha_fit, alpha_pos, curve
 
 
-# ══════════════════════════════════════════════════════════════
-# 3. WOA – Whale Optimization Algorithm
-# ══════════════════════════════════════════════════════════════
 def WOA(func, lb, ub, dim, max_fes, pop=30):
-    pos = _init_pop(pop, dim, lb, ub)
+    """Whale Optimization Algorithm."""
+    pos  = _init_pop(pop, dim, lb, ub)
     fits = np.array([func(pos[i]) for i in range(pop)])
-    fes = pop
+    fes  = pop
     best_idx = np.argmin(fits)
     best_pos = pos[best_idx].copy(); best_fit = fits[best_idx]
     curve = [best_fit]
@@ -113,8 +92,7 @@ def WOA(func, lb, ub, dim, max_fes, pop=30):
                     D = np.abs(C*pos[rand_idx] - pos[i])
                     pos[i] = _clip(pos[rand_idx] - A*D, lb, ub)
             else:
-                l = np.random.uniform(-1, 1)
-                b = 1
+                l = np.random.uniform(-1, 1); b = 1
                 D = np.abs(best_pos - pos[i])
                 pos[i] = _clip(D*np.exp(b*l)*np.cos(2*np.pi*l) + best_pos, lb, ub)
         fits = np.array([func(pos[i]) for i in range(pop)])
@@ -127,13 +105,11 @@ def WOA(func, lb, ub, dim, max_fes, pop=30):
     return best_fit, best_pos, curve
 
 
-# ══════════════════════════════════════════════════════════════
-# 4. DE – Differential Evolution (DE/rand/1/bin)
-# ══════════════════════════════════════════════════════════════
 def DE(func, lb, ub, dim, max_fes, pop=30, F=0.8, CR=0.9):
-    pos = _init_pop(pop, dim, lb, ub)
+    """Differential Evolution (DE/rand/1/bin)."""
+    pos  = _init_pop(pop, dim, lb, ub)
     fits = np.array([func(pos[i]) for i in range(pop)])
-    fes = pop
+    fes  = pop
     best_idx = np.argmin(fits)
     best_pos = pos[best_idx].copy(); best_fit = fits[best_idx]
     curve = [best_fit]
@@ -145,7 +121,7 @@ def DE(func, lb, ub, dim, max_fes, pop=30, F=0.8, CR=0.9):
             mutant = _clip(a + F*(b - c), lb, ub)
             cross  = np.random.rand(dim) < CR
             if not cross.any(): cross[np.random.randint(dim)] = True
-            trial  = np.where(cross, mutant, pos[i])
+            trial   = np.where(cross, mutant, pos[i])
             f_trial = func(trial); fes += 1
             if f_trial < fits[i]:
                 pos[i] = trial; fits[i] = f_trial
@@ -156,15 +132,13 @@ def DE(func, lb, ub, dim, max_fes, pop=30, F=0.8, CR=0.9):
     return best_fit, best_pos, curve
 
 
-# ══════════════════════════════════════════════════════════════
-# 5. SMA – Slime Mould Algorithm
-# ══════════════════════════════════════════════════════════════
 def SMA(func, lb, ub, dim, max_fes, pop=30):
-    pos = _init_pop(pop, dim, lb, ub)
+    """Slime Mould Algorithm."""
+    pos  = _init_pop(pop, dim, lb, ub)
     fits = np.array([func(pos[i]) for i in range(pop)])
-    fes = pop
-    best_idx = np.argmin(fits)
-    best_pos = pos[best_idx].copy(); best_fit = fits[best_idx]
+    fes  = pop
+    best_idx  = np.argmin(fits)
+    best_pos  = pos[best_idx].copy(); best_fit = fits[best_idx]
     worst_fit = np.max(fits)
     W = np.ones(pop)
     curve = [best_fit]
@@ -172,7 +146,6 @@ def SMA(func, lb, ub, dim, max_fes, pop=30):
     while fes < max_fes:
         a = np.arctanh(-(fes/max_fes) + 1)
         b = 1 - fes/max_fes
-        # Update weights
         idx_sorted = np.argsort(fits)
         for rank, idx in enumerate(idx_sorted):
             if rank < pop//2:
@@ -183,14 +156,12 @@ def SMA(func, lb, ub, dim, max_fes, pop=30):
             if np.random.rand() < 0.03:
                 pos[i] = np.random.uniform(lb, ub, dim)
             else:
-                p = np.tanh(abs(fits[i] - best_fit))
+                p  = np.tanh(abs(fits[i] - best_fit))
                 vb = np.random.uniform(-a, a, dim)
                 vc = np.random.uniform(-b, b, dim)
-                r = np.random.rand(dim)
-                A = np.random.randint(pop); B = np.random.randint(pop)
-                pos[i] = np.where(r < p,
-                                  best_pos + vb*(W[i]*pos[A] - pos[B]),
-                                  vc*pos[i])
+                r  = np.random.rand(dim)
+                A  = np.random.randint(pop); B = np.random.randint(pop)
+                pos[i] = np.where(r < p, best_pos + vb*(W[i]*pos[A] - pos[B]), vc*pos[i])
                 pos[i] = _clip(pos[i], lb, ub)
         fits = np.array([func(pos[i]) for i in range(pop)])
         fes += pop
@@ -203,19 +174,17 @@ def SMA(func, lb, ub, dim, max_fes, pop=30):
     return best_fit, best_pos, curve
 
 
-# ══════════════════════════════════════════════════════════════
-# 6. HHO – Harris Hawks Optimization
-# ══════════════════════════════════════════════════════════════
 def HHO(func, lb, ub, dim, max_fes, pop=30):
-    pos = _init_pop(pop, dim, lb, ub)
+    """Harris Hawks Optimization."""
+    pos  = _init_pop(pop, dim, lb, ub)
     fits = np.array([func(pos[i]) for i in range(pop)])
-    fes = pop
+    fes  = pop
     best_idx = np.argmin(fits)
     best_pos = pos[best_idx].copy(); best_fit = fits[best_idx]
     curve = [best_fit]
 
     def levy(d):
-        beta = 1.5
+        beta  = 1.5
         sigma = (math.gamma(1+beta)*np.sin(np.pi*beta/2) /
                  (math.gamma((1+beta)/2)*beta*2**((beta-1)/2)))**(1/beta)
         u = np.random.randn(d)*sigma; v = np.random.randn(d)
@@ -227,26 +196,26 @@ def HHO(func, lb, ub, dim, max_fes, pop=30):
             E0 = 2*np.random.rand() - 1
             E  = E1*E0
             r  = np.random.rand()
-            if abs(E) >= 1:   # Exploration
+            if abs(E) >= 1:  # Exploration
                 rand_idx = np.random.randint(pop)
                 if r >= 0.5:
                     pos[i] = _clip(pos[rand_idx] - np.random.rand()*np.abs(pos[rand_idx] - 2*np.random.rand()*pos[i]), lb, ub)
                 else:
                     mu = np.mean(pos, axis=0)
                     pos[i] = _clip((best_pos - mu) - np.random.rand()*(lb + np.random.rand()*(ub-lb)), lb, ub)
-            else:              # Exploitation
+            else:             # Exploitation
                 J = 2*(1 - np.random.rand()); delta = best_pos - pos[i]
-                if r >= 0.5 and abs(E) < 0.5:      # Hard besiege
+                if r >= 0.5 and abs(E) < 0.5:
                     pos[i] = _clip(best_pos - E*np.abs(delta), lb, ub)
-                elif r >= 0.5 and abs(E) >= 0.5:   # Soft besiege
+                elif r >= 0.5 and abs(E) >= 0.5:
                     pos[i] = _clip(delta - E*np.abs(J*best_pos - pos[i]), lb, ub)
-                elif r < 0.5 and abs(E) < 0.5:     # Hard besiege + Lévy
+                elif r < 0.5 and abs(E) < 0.5:
                     lv = levy(dim)
                     Y = best_pos - E*np.abs(delta)
                     Z = Y + np.random.rand(dim)*lv
                     fY = func(Y); fZ = func(Z); fes += 2
                     pos[i] = _clip(Y if fY < fits[i] else (Z if fZ < fits[i] else pos[i]), lb, ub)
-                else:                               # Soft besiege + Lévy
+                else:
                     lv = levy(dim)
                     Y = best_pos - E*np.abs(J*best_pos - np.mean(pos, axis=0))
                     Z = Y + np.random.rand(dim)*lv
@@ -263,13 +232,11 @@ def HHO(func, lb, ub, dim, max_fes, pop=30):
     return best_fit, best_pos, curve
 
 
-# ══════════════════════════════════════════════════════════════
-# 7. AO – Aquila Optimizer
-# ══════════════════════════════════════════════════════════════
 def AO(func, lb, ub, dim, max_fes, pop=30):
-    pos = _init_pop(pop, dim, lb, ub)
+    """Aquila Optimizer."""
+    pos  = _init_pop(pop, dim, lb, ub)
     fits = np.array([func(pos[i]) for i in range(pop)])
-    fes = pop
+    fes  = pop
     best_idx = np.argmin(fits)
     best_pos = pos[best_idx].copy(); best_fit = fits[best_idx]
     curve = [best_fit]
@@ -285,25 +252,21 @@ def AO(func, lb, ub, dim, max_fes, pop=30):
         t += 1
         alpha_ctrl = 0.1; delta_ctrl = 0.1
         for i in range(pop):
-            r1, r2 = np.random.rand(), np.random.rand()
-            theta = np.random.uniform(0, 2*np.pi, dim)
+            r1, r2   = np.random.rand(), np.random.rand()
             rand_pos = np.random.uniform(lb, ub, dim)
             mean_pos = np.mean(pos, axis=0)
-
-            if t/T <= 2/3:           # Exploration
-                if r1 < 0.5:        # Expanded exploration
+            if t/T <= 2/3:         # Exploration
+                if r1 < 0.5:
                     pos[i] = best_pos*(1 - t/T) + (mean_pos - best_pos)*np.random.rand()
-                else:               # Narrowed exploration
-                    lev = levy(dim)
+                else:
+                    lev    = levy(dim)
                     pos[i] = best_pos + alpha_ctrl*lev*(best_pos - pos[np.random.randint(pop)])
-            else:                   # Exploitation
-                if r2 < 0.5:        # Expanded exploitation
+            else:                  # Exploitation
+                if r2 < 0.5:
                     pos[i] = (best_pos - mean_pos)*alpha_ctrl - np.random.rand() + rand_pos*delta_ctrl
-                else:               # Narrowed exploitation
+                else:
                     pos[i] = best_pos + np.random.rand()*(mean_pos - pos[i])
-
             pos[i] = _clip(pos[i], lb, ub)
-
         fits = np.array([func(pos[i]) for i in range(pop)])
         fes += pop
         best_idx = np.argmin(fits)
@@ -314,17 +277,8 @@ def AO(func, lb, ub, dim, max_fes, pop=30):
     return best_fit, best_pos, curve
 
 
-# ══════════════════════════════════════════════════════════════
-# 8. ARO – Artificial Rabbit Optimisation  (BASE ALGORITHM)
-#    Wang et al. 2022 — the algorithm GBFAO is built upon
-# ══════════════════════════════════════════════════════════════
 def ARO(func, lb, ub, dim, max_fes, pop=30):
-    """
-    Artificial Rabbit Optimisation (original ARO).
-    Two phases:
-      Phase 1 – Random Walk  (exploration)
-      Phase 2 – Detour Foraging (exploitation)
-    """
+    """Artificial Rabbit Optimisation – base algorithm GBFAO is derived from."""
     pos  = _init_pop(pop, dim, lb, ub)
     fits = np.array([func(pos[i]) for i in range(pop)], dtype=float)
     fes  = pop
@@ -333,45 +287,31 @@ def ARO(func, lb, ub, dim, max_fes, pop=30):
     best_pos = pos[best_idx].copy()
     best_fit = float(fits[best_idx])
     curve    = [best_fit]
-
     max_iter = max_fes // pop
 
     for t in range(1, max_iter + 1):
         if fes >= max_fes:
             break
-
-        # Shrink factor – controls phase balance
-        A = 4 * (1 - t / max_iter) * np.log(1 / (np.random.rand() + 1e-10))
+        A     = 4 * (1 - t / max_iter) * np.log(1 / (np.random.rand() + 1e-10))
         theta = 2 * np.pi * np.random.rand()
 
         for i in range(pop):
             r = np.random.rand()
-
-            if r < 0.5:
-                # ── Phase 1 : Random Walk ────────────────────────
-                # Mimics rabbit's erratic escape from predators
+            if r < 0.5:  # Random walk
                 rand_idx = np.random.randint(pop)
-                L = np.random.rand(dim)
-                new_pos = pos[i] + A * L * (pos[rand_idx] - pos[i])
-            else:
-                # ── Phase 2 : Detour Foraging ────────────────────
-                # Rabbit moves towards best using a curved detour
-                d = abs(best_pos - pos[i])
-                B = np.random.rand(dim)
-                new_pos = (best_pos +
-                           d * np.exp(B * np.cos(theta)) *
-                           np.cos(2 * np.pi * B))
+                L        = np.random.rand(dim)
+                new_pos  = pos[i] + A * L * (pos[rand_idx] - pos[i])
+            else:        # Detour foraging toward best
+                d       = abs(best_pos - pos[i])
+                B       = np.random.rand(dim)
+                new_pos = best_pos + d * np.exp(B * np.cos(theta)) * np.cos(2 * np.pi * B)
 
             new_pos = _clip(new_pos, lb, ub)
-            f_new   = func(new_pos)
-            fes    += 1
-
+            f_new   = func(new_pos); fes += 1
             if f_new < fits[i]:
-                pos[i]  = new_pos
-                fits[i] = f_new
+                pos[i]  = new_pos; fits[i] = f_new
                 if f_new < best_fit:
-                    best_fit = f_new
-                    best_pos = new_pos.copy()
+                    best_fit = f_new; best_pos = new_pos.copy()
 
             if fes >= max_fes:
                 break
@@ -381,9 +321,8 @@ def ARO(func, lb, ub, dim, max_fes, pop=30):
     return best_fit, best_pos, curve
 
 
-# ─── Registry ─────────────────────────────────────────────────────────────────
 COMPETITORS = {
-    "ARO": ARO,   # BASE algorithm (GBFAO is derived from this)
+    "ARO": ARO,
     "PSO": PSO,
     "GWO": GWO,
     "WOA": WOA,

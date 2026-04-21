@@ -1,10 +1,4 @@
-"""
-Benchmark suite registry for CEC-style experiments.
-
-This module exposes a unified interface for selecting benchmark suites
-without changing the optimisation pipeline.
-"""
-
+# Benchmark suite registry – returns function lists, names, and bounds for each CEC suite.
 import numpy as np
 
 from benchmark_functions import BOUNDS as CEC2014_BOUNDS

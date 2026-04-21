@@ -1,23 +1,5 @@
-"""
-=============================================================
- run_experiments.py  –  GBFAO Full Experimental Suite
- ─────────────────────────────────────────────────────────
- HOW TO RUN
- ──────────
- Full assignment run  (30–90 min):
-   python run_experiments.py
-
- Quick test  (2–3 min, verifies pipeline):
-   python run_experiments.py --quick
-
- Custom subset:
-   python run_experiments.py --funcs 1,2,3,4,5,6,7,8,9,10
-
- SETTINGS
-   MAX_FES = 60,000 | RUNS = 50 | DIM = 30
-   Algorithms: GBFAO-v4/v3/v2/v1 + ARO + PSO+GWO+WOA+DE+SMA+HHO+AO
-=============================================================
-"""
+# Main experiment runner: benchmarks all algorithms on CEC-2014/2017/2020/2022 and engineering problems.
+# Usage: python run_experiments.py [--quick | --cec-both | --cec2020 | --cec2022 | --cec-all]
 
 import argparse, os, time
 import numpy as np
@@ -229,10 +211,12 @@ def run_cec_suite(suite_name, functions, func_names, bounds,
     Returns
     -------
     results    : {algo: {func_name: np.ndarray(runs,)}}
+    med_curves : {algo: {func_name: list[float]}}   median convergence curve
     """
     lb, ub = bounds
     algo_names = list(ALL_ALGORITHMS.keys())
-    results = {a: {} for a in algo_names}
+    results    = {a: {} for a in algo_names}
+    med_curves = {a: {} for a in algo_names}
     total = len(algo_names) * len(func_names) * runs
     done = 0; t0 = time.time()
 
@@ -240,20 +224,24 @@ def run_cec_suite(suite_name, functions, func_names, bounds,
 
     for fname, func in zip(func_names, functions):
         for aname, afunc in ALL_ALGORITHMS.items():
-            fits = []
+            fits, curves = [], []
             for _ in range(runs):
-                f, _ = single_run(afunc, func, lb, ub, dim, max_fes)
+                f, c = single_run(afunc, func, lb, ub, dim, max_fes)
                 fits.append(f)
+                curves.append(c)
                 done += 1
             arr = np.array(fits)
             results[aname][fname] = arr
+            ml = min(len(c) for c in curves)
+            med_curves[aname][fname] = list(np.median(
+                [c[:ml] for c in curves], axis=0))
             if verbose:
                 ela = time.time() - t0
                 eta = ela / done * (total - done) if done < total else 0
                 print(f"  {aname:12s}|{fname:4s}| mean={np.mean(arr):.4e} "
                       f"std={np.std(arr):.4e} [{done}/{total} ETA {eta/60:.1f}min]")
 
-    return results
+    return results, med_curves
 
 
 def build_cec_table(results, func_names, suite_name,
@@ -281,18 +269,34 @@ def run_cec_2020_2022(max_fes=60_000, runs=50):
     print("\n" + "="*60)
     print("  CEC-2020 Experiments  (dim=10, 10 functions)")
     print("="*60)
-    res2020 = run_cec_suite("CEC-2020", FUNCTIONS_2020, FUNC_NAMES_2020,
-                             BOUNDS_2020, max_fes=max_fes, runs=runs, dim=10)
+    res2020, curves2020 = run_cec_suite("CEC-2020", FUNCTIONS_2020, FUNC_NAMES_2020,
+                                         BOUNDS_2020, max_fes=max_fes, runs=runs, dim=10)
     df2020  = build_cec_table(res2020, FUNC_NAMES_2020, "CEC-2020",
-                               "results/cec2020_results.csv")
+                               "results/CEC-2020/1_Mean_Std_Rank_Table.csv")
+    plot_convergence(curves2020, FUNC_NAMES_2020,
+                     save_dir="results/CEC-2020", ncols=5)
+    mean2020 = {a: {f: float(np.mean(res2020[a].get(f, [np.nan])))
+                    for f in FUNC_NAMES_2020} for a in res2020}
+    plot_rank_heatmap(mean2020, FUNC_NAMES_2020,
+                      save_path="results/CEC-2020/3_Rank_Heatmap.pdf")
+    plot_boxplots(res2020, FUNC_NAMES_2020,
+                  save_dir="results/CEC-2020")
 
     print("\n" + "="*60)
     print("  CEC-2022 Experiments  (dim=10, 12 functions)")
     print("="*60)
-    res2022 = run_cec_suite("CEC-2022", FUNCTIONS_2022, FUNC_NAMES_2022,
-                             BOUNDS_2022, max_fes=max_fes, runs=runs, dim=10)
+    res2022, curves2022 = run_cec_suite("CEC-2022", FUNCTIONS_2022, FUNC_NAMES_2022,
+                                         BOUNDS_2022, max_fes=max_fes, runs=runs, dim=10)
     df2022  = build_cec_table(res2022, FUNC_NAMES_2022, "CEC-2022",
-                               "results/cec2022_results.csv")
+                               "results/CEC-2022/1_Mean_Std_Rank_Table.csv")
+    plot_convergence(curves2022, FUNC_NAMES_2022,
+                     save_dir="results/CEC-2022", ncols=6)
+    mean2022 = {a: {f: float(np.mean(res2022[a].get(f, [np.nan])))
+                    for f in FUNC_NAMES_2022} for a in res2022}
+    plot_rank_heatmap(mean2022, FUNC_NAMES_2022,
+                      save_path="results/CEC-2022/3_Rank_Heatmap.pdf")
+    plot_boxplots(res2022, FUNC_NAMES_2022,
+                  save_dir="results/CEC-2022")
 
     # Wilcoxon for each suite
     print("\n[Wilcoxon] CEC-2020 ...")
@@ -300,7 +304,7 @@ def run_cec_2020_2022(max_fes=60_000, runs=50):
     competitor2020 = {a: res2020[a] for a in WILCOXON_AGAINST}
     sign2020, _    = full_wilcoxon_table(proposed2020, competitor2020,
                                           FUNC_NAMES_2020,
-                                          save_path="results/cec2020_wilcoxon.csv")
+                                          save_path="results/CEC-2020/2_Wilcoxon_Statistical_Test.csv")
     print_wilcoxon_summary(sign2020)
 
     print("\n[Wilcoxon] CEC-2022 ...")
@@ -308,7 +312,7 @@ def run_cec_2020_2022(max_fes=60_000, runs=50):
     competitor2022 = {a: res2022[a] for a in WILCOXON_AGAINST}
     sign2022, _    = full_wilcoxon_table(proposed2022, competitor2022,
                                           FUNC_NAMES_2022,
-                                          save_path="results/cec2022_wilcoxon.csv")
+                                          save_path="results/CEC-2022/2_Wilcoxon_Statistical_Test.csv")
     print_wilcoxon_summary(sign2022)
 
     return res2020, res2022, df2020, df2022
@@ -322,19 +326,27 @@ def run_cec_2022_only(max_fes=60_000, runs=50):
     print("\n" + "="*60)
     print("  CEC-2022 Experiments  (dim=10, 12 functions)")
     print("="*60)
-    res2022 = run_cec_suite("CEC-2022", FUNCTIONS_2022, FUNC_NAMES_2022,
-                             BOUNDS_2022, max_fes=max_fes, runs=runs, dim=10)
+    res2022, curves2022 = run_cec_suite("CEC-2022", FUNCTIONS_2022, FUNC_NAMES_2022,
+                                         BOUNDS_2022, max_fes=max_fes, runs=runs, dim=10)
     df2022  = build_cec_table(res2022, FUNC_NAMES_2022, "CEC-2022",
-                               "results/cec2022_results.csv")
+                               "results/CEC-2022/1_Mean_Std_Rank_Table.csv")
+    plot_convergence(curves2022, FUNC_NAMES_2022,
+                     save_dir="results/CEC-2022", ncols=6)
+    mean2022 = {a: {f: float(np.mean(res2022[a].get(f, [np.nan])))
+                    for f in FUNC_NAMES_2022} for a in res2022}
+    plot_rank_heatmap(mean2022, FUNC_NAMES_2022,
+                      save_path="results/CEC-2022/3_Rank_Heatmap.pdf")
+    plot_boxplots(res2022, FUNC_NAMES_2022,
+                  save_dir="results/CEC-2022")
 
     print("\n[Wilcoxon] CEC-2022 ...")
     proposed2022   = res2022["GBFAO-v4"]
     competitor2022 = {a: res2022[a] for a in WILCOXON_AGAINST}
     sign2022, _    = full_wilcoxon_table(proposed2022, competitor2022,
                                           FUNC_NAMES_2022,
-                                          save_path="results/cec2022_wilcoxon.csv")
+                                          save_path="results/CEC-2022/2_Wilcoxon_Statistical_Test.csv")
     print_wilcoxon_summary(sign2022)
-    print("\n[DONE] CEC-2022 complete. Send results/cec2022_results.csv and results/cec2022_wilcoxon.csv")
+    print("\n[DONE] CEC-2022 complete. Results saved to results/CEC-2022/")
     return res2022, df2022
 
 
@@ -343,19 +355,27 @@ def run_cec_2020_only(max_fes=60_000, runs=50):
     print("\n" + "="*60)
     print("  CEC-2020 Experiments  (dim=10, 10 functions)")
     print("="*60)
-    res2020 = run_cec_suite("CEC-2020", FUNCTIONS_2020, FUNC_NAMES_2020,
-                             BOUNDS_2020, max_fes=max_fes, runs=runs, dim=10)
+    res2020, curves2020 = run_cec_suite("CEC-2020", FUNCTIONS_2020, FUNC_NAMES_2020,
+                                         BOUNDS_2020, max_fes=max_fes, runs=runs, dim=10)
     df2020  = build_cec_table(res2020, FUNC_NAMES_2020, "CEC-2020",
-                               "results/cec2020_results.csv")
+                               "results/CEC-2020/1_Mean_Std_Rank_Table.csv")
+    plot_convergence(curves2020, FUNC_NAMES_2020,
+                     save_dir="results/CEC-2020", ncols=5)
+    mean2020 = {a: {f: float(np.mean(res2020[a].get(f, [np.nan])))
+                    for f in FUNC_NAMES_2020} for a in res2020}
+    plot_rank_heatmap(mean2020, FUNC_NAMES_2020,
+                      save_path="results/CEC-2020/3_Rank_Heatmap.pdf")
+    plot_boxplots(res2020, FUNC_NAMES_2020,
+                  save_dir="results/CEC-2020")
 
     print("\n[Wilcoxon] CEC-2020 ...")
     proposed2020   = res2020["GBFAO-v4"]
     competitor2020 = {a: res2020[a] for a in WILCOXON_AGAINST}
     sign2020, _    = full_wilcoxon_table(proposed2020, competitor2020,
                                           FUNC_NAMES_2020,
-                                          save_path="results/cec2020_wilcoxon.csv")
+                                          save_path="results/CEC-2020/2_Wilcoxon_Statistical_Test.csv")
     print_wilcoxon_summary(sign2020)
-    print("\n[DONE] CEC-2020 complete. Send results/cec2020_results.csv and results/cec2020_wilcoxon.csv")
+    print("\n[DONE] CEC-2020 complete. Results saved to results/CEC-2020/")
     return res2020, df2020
 
 
